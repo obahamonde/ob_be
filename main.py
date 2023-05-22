@@ -95,7 +95,7 @@ async def stream_handler(request:Request):
     return resp
 
 
-app.router.add_get("/api/streams", stream_handler)
+app.router.add_get("/api/sse", stream_handler)
 
 
 @app.post("/api/streams")
