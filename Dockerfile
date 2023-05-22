@@ -7,4 +7,4 @@ COPY . .
 RUN pip install --upgrade pip &&\
     pip install -r requirements.txt
 
-CMD ["aiofauna","dev"]
+CMD ["python", "main.py"]
