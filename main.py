@@ -82,12 +82,18 @@ async def stream_handler(request:Request):
         raise Exception("Ref is required") # pylint: disable=broad-exception-raised
     usr = params["usr"]
     async with sse_response(request) as resp:
+        await resp.prepare(request)
         while True:
             state[usr] = resp
             await asyncio.sleep(60)
             if usr not in state:
                 return resp
-        
+            if resp.task.done():
+                return resp
+            await resp.send("ping")
+            print("ping")
+    return resp
+
 
 app.router.add_get("/api/streams", stream_handler)
 
