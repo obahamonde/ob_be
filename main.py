@@ -2,16 +2,20 @@ import asyncio
 import os
 from typing import Dict
 
-from aiofauna import Api, FaunaModel, Field, Request, render_template
+from aiofauna import Api, FaunaModel, Field, Request, redirect, render_template
 from aiofauna.client import HTTPClient  # pylint: disable=all
 from aiohttp_sse import EventSourceResponse, sse_response
 from dotenv import load_dotenv
+from multidict import MultiDict
 from pydantic import BaseModel
 
 load_dotenv()
 FAUNA_SECRET = os.getenv("FAUNA_SECRET")
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+assert isinstance(FAUNA_SECRET, str)
+assert isinstance(SLACK_WEBHOOK_URL, str)
+assert isinstance(BREVO_API_KEY, str)
 
 class Contact(FaunaModel):
     message:str = Field(...)
@@ -19,7 +23,7 @@ class Contact(FaunaModel):
     name:str = Field(...)
     
 class SlashCommand(BaseModel):
-    ref:str = Field(...)
+    usr:str = Field(...)
     message:str = Field(...)
 
 
@@ -57,7 +61,7 @@ async def contact_handler(body:Contact):
             "accept": "application/json"
         }
         await http.fetch(url, method="POST", data=payload, headers=headers)
-        await http.text(SLACK_WEBHOOK_URL, method="POST", data={"text": contact.json()})
+        await http.text(SLACK_WEBHOOK_URL, method="POST", data={"text": f"https://ob-be-fwuw7gz7oq-uc.a.run.app/?usr={contact.ref}"})
         response = {
             "message": "Message sent successfully",
             "status": "success",  
@@ -70,30 +74,30 @@ async def contact_handler(body:Contact):
     }
     return response
 
+@app.get("/api/stream")
 async def stream_handler(request:Request):
     """Stream handler"""
     params = dict(request.query)
     if "ref" not in params:
         raise Exception("Ref is required") # pylint: disable=broad-exception-raised
-    ref = params["ref"]
+    usr = params["usr"]
     async with sse_response(request) as resp:
         while True:
-            state[ref] = resp
+            state[usr] = resp
             await asyncio.sleep(60)
-            if ref not in state:
+            if usr not in state:
                 return resp
         
-app.router.add_get("/api/stream", stream_handler)
 
 @app.post("/api/stream")
 async def stream_post(cmd:SlashCommand):
     """Stream handler"""
-    if cmd.ref not in state:
+    if cmd.usr not in state:
         return {
             "message": "User not found",
             "status": "error"
         }
-    resp = state[cmd.ref]
+    resp = state[cmd.usr]
     if resp.task:
         if resp.task.done():
             print("Task done")
@@ -102,7 +106,7 @@ async def stream_post(cmd:SlashCommand):
                 "status": "error"
             }
     await resp.send(cmd.message)
-    state.pop(cmd.ref)
+    state.pop(cmd.usr)
     return {
         "message": "Message sent",
         "status": "success"
@@ -111,7 +115,6 @@ async def stream_post(cmd:SlashCommand):
 @app.get('/')
 async def index():
     return render_template('index.html')
-
 
 app.static()
 
