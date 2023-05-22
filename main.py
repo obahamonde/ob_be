@@ -75,6 +75,7 @@ async def contact_handler(body:Contact):
     return response
 
 
+@app.get("/api/sse")
 async def stream_handler(request:Request):
     """Stream handler"""
     params = dict(request.query)
@@ -93,9 +94,6 @@ async def stream_handler(request:Request):
             await resp.send("ping")
             print("ping")
     return resp
-
-
-app.router.add_get("/api/sse", stream_handler)
 
 
 @app.post("/api/streams")
@@ -126,8 +124,6 @@ async def index():
     return render_template('index.html')
 
 app.static()
-
-
 
 #@app.on_event("startup")
 async def startup(_):
