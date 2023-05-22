@@ -1,12 +1,12 @@
-import os
 import asyncio
+import os
 from typing import Dict
-from aiofauna.client import HTTPClient # pylint: disable=all
-from aiofauna import Api, FaunaModel, Field, Request
-from pydantic import BaseModel
-from aiohttp_sse import sse_response, EventSourceResponse
-from dotenv import load_dotenv
 
+from aiofauna import Api, FaunaModel, Field, Request, render_template
+from aiofauna.client import HTTPClient  # pylint: disable=all
+from aiohttp_sse import EventSourceResponse, sse_response
+from dotenv import load_dotenv
+from pydantic import BaseModel
 
 load_dotenv()
 FAUNA_SECRET = os.getenv("FAUNA_SECRET")
@@ -107,6 +107,14 @@ async def stream_post(cmd:SlashCommand):
         "message": "Message sent",
         "status": "success"
     }
+
+@app.get('/')
+async def index():
+    return render_template('index.html')
+
+
+app.static()
+
 
 
 #@app.on_event("startup")

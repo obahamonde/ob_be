@@ -7,4 +7,4 @@ COPY . .
 RUN pip install --upgrade pip &&\
     pip install -r requirements.txt
 
-CMD ["adev", "runserver", "--port", "8080", "--livereload", "--host", "0.0.0.0"]
+CMD ["aiofauna","dev"]
