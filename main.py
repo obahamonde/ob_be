@@ -84,17 +84,14 @@ async def stream_handler(request:Request):
     usr = params["usr"]
     async with sse_response(request) as resp:
         await resp.prepare(request)
-        while True:
-            state[usr] = resp
-            await asyncio.sleep(60)
-            if usr not in state:
-                return resp
-            if resp.task.done():
-                return resp
-            await resp.send("ping")
-            print("ping")
-    return resp
-
+        if usr in state:
+            state.pop(usr)
+        state[usr] = resp
+        await resp.send("Connected")
+        await asyncio.sleep(60)
+        await resp.send("Disconnected")
+        return resp
+    
 
 @app.post("/api/streams")
 async def stream_post(cmd:SlashCommand):
