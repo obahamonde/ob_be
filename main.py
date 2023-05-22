@@ -74,7 +74,7 @@ async def contact_handler(body:Contact):
     }
     return response
 
-@app.get("/api/streams")
+
 async def stream_handler(request:Request):
     """Stream handler"""
     params = dict(request.query)
@@ -88,6 +88,9 @@ async def stream_handler(request:Request):
             if usr not in state:
                 return resp
         
+
+app.router.add_get("/api/streams", stream_handler)
+
 
 @app.post("/api/streams")
 async def stream_post(cmd:SlashCommand):
