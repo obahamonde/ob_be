@@ -124,3 +124,7 @@ app.static()
 async def startup(_):
     """Startup handler"""
     await Contact.provision()
+    
+    
+if __name__ == "__main__":
+    app.run()
