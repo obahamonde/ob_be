@@ -76,22 +76,13 @@ async def contact_handler(body:Contact):
 
 
 @app.get("/api/sse")
-async def stream_handler(request:Request):
+async def stream_handler(request:Request,usr:str):
     """Stream handler"""
-    params = dict(request.query)
-    if "ref" not in params:
-        raise Exception("Ref is required") # pylint: disable=broad-exception-raised
-    usr = params["usr"]
     async with sse_response(request) as resp:
-        await resp.prepare(request)
-        if usr in state:
-            state.pop(usr)
         state[usr] = resp
         await resp.send("Connected")
-        await asyncio.sleep(60)
-        await resp.send("Disconnected")
-        return resp
-    
+        await resp.wait()
+    return resp
 
 @app.post("/api/streams")
 async def stream_post(cmd:SlashCommand):
