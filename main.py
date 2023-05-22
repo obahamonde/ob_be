@@ -74,7 +74,7 @@ async def contact_handler(body:Contact):
     }
     return response
 
-@app.get("/api/stream")
+@app.get("/api/streams")
 async def stream_handler(request:Request):
     """Stream handler"""
     params = dict(request.query)
