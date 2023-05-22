@@ -89,7 +89,7 @@ async def stream_handler(request:Request):
                 return resp
         
 
-@app.post("/api/stream")
+@app.post("/api/streams")
 async def stream_post(cmd:SlashCommand):
     """Stream handler"""
     if cmd.usr not in state:
