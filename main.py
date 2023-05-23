@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Dict
+from typing import Dict, List
 
 from aiofauna import Api, FaunaModel, Field, Request, redirect, render_template
 from aiofauna.client import HTTPClient  # pylint: disable=all
@@ -31,7 +31,7 @@ http = HTTPClient()
 
 app = Api()
 
-state:Dict[str,EventSourceResponse] = {}
+state:Dict[str,List[EventSourceResponse]] = {}
 
 
 @app.post("/api/contact")
@@ -75,36 +75,34 @@ async def contact_handler(body:Contact):
     return response
 
 
-@app.get("/api/sse")
-async def stream_handler(request:Request, usr:str):
-    """Stream handler"""
-    if usr not in state:
-        state[usr] = await sse_response(request)
-    resp = state[usr]
+@app.sse("/api/sse")
+async def sse_handler(resp:EventSourceResponse,ref:str)->EventSourceResponse:
+    if ref not in state:
+        state[ref] = [resp]
+    else:
+        state[ref].append(resp)
     await asyncio.sleep(60)
     return resp
+   
 @app.post("/api/streams")
 async def stream_post(cmd:SlashCommand):
-    """Stream handler"""
+    """Stream Post Request through Slack"""
     if cmd.usr not in state:
         return {
             "message": "User not found",
             "status": "error"
         }
-    resp = state[cmd.usr]
-    if resp.task:
-        if resp.task.done():
-            print("Task done")
-            return {
-                "message": "Task done",
-                "status": "error"
-            }
-    await resp.send(cmd.message)
-    state.pop(cmd.usr)
-    return {
-        "message": "Message sent",
-        "status": "success"
-    }
+    else:
+        for resp in state[cmd.usr]:
+            try:
+                await resp.send(cmd.message)
+            except:
+                state[cmd.usr].remove(resp)
+                continue
+        return {
+            "message": "Message sent",
+            "status": "success"
+        }
 
 @app.get('/')
 async def index():
